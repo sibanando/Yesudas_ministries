@@ -1,0 +1,150 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../lib/generated/prisma"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("admin_users")
+}
+
+model BlogPost {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  title          String
+  date           String
+  excerpt        String   @db.Text
+  author         String
+  authorRole     String?  @map("author_role")
+  authorImageUrl String?  @map("author_image_url")
+  coverImageUrl  String?  @map("cover_image_url")
+  readTime       String   @map("read_time")
+  tags           Json
+  category       String
+  content        String?  @db.Text
+  published      Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("blog_posts")
+}
+
+model ChurchEvent {
+  id              String   @id @default(cuid())
+  title           String
+  description     String   @db.Text
+  date            String
+  time            String
+  endTime         String?  @map("end_time")
+  location        String
+  type            String
+  imageUrl        String?  @map("image_url")
+  isRecurring     Boolean  @default(false) @map("is_recurring")
+  registrationUrl String?  @map("registration_url")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("events")
+}
+
+model Ministry {
+  id              String   @id @default(cuid())
+  name            String
+  description     String   @db.Text
+  fullDescription String?  @db.Text @map("full_description")
+  imageUrl        String   @map("image_url")
+  leader          String
+  leaderImageUrl  String?  @map("leader_image_url")
+  schedule        String
+  contactEmail    String?  @map("contact_email")
+  tags            Json
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("ministries")
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  name      String
+  role      String
+  bio       String   @db.Text
+  imageUrl  String   @map("image_url")
+  email     String?
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("team_members")
+}
+
+model Sermon {
+  id           String   @id @default(cuid())
+  videoId      String   @unique @map("video_id")
+  title        String
+  description  String   @db.Text
+  thumbnailUrl String   @map("thumbnail_url")
+  publishedAt  String   @map("published_at")
+  duration     String?
+  tags         Json
+  series       String?
+  viewCount    String?  @map("view_count")
+  published    Boolean  @default(true)
+  sortOrder    Int      @default(0) @map("sort_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("sermons")
+}
+
+model NewsletterSubscriber {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String?
+  language       String    @default("en")
+  subscribedAt   DateTime  @default(now()) @map("subscribed_at")
+  unsubscribedAt DateTime? @map("unsubscribed_at")
+  isActive       Boolean   @default(true) @map("is_active")
+
+  @@map("newsletter_subscribers")
+}
+
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("contact_submissions")
+}
+
+model Donation {
+  id         String   @id @default(cuid())
+  gateway    String
+  gatewayRef String   @map("gateway_ref")
+  amount     Int
+  currency   String
+  cause      String
+  frequency  String
+  donorName  String?  @map("donor_name")
+  donorEmail String?  @map("donor_email")
+  status     String   @default("completed")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("donations")
+}

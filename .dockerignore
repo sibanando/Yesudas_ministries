@@ -1,0 +1,13 @@
+.git
+.gitignore
+.env
+.env.local
+.env*.local
+node_modules
+# Do not send local Next build output to Docker (can contain Windows symlinks/odd modes)
+.next
+out
+npm-debug.log*
+*.pem
+.DS_Store
+Thumbs.db
