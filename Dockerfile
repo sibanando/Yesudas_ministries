@@ -29,6 +29,8 @@ ENV NODE_ENV=production
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+COPY --from=deps /app/lib/generated ./lib/generated
+RUN mkdir -p public
 
 # Build-time defaults for `NEXT_PUBLIC_*` used in a few places.
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -68,4 +70,3 @@ FROM deps AS migrator
 WORKDIR /app
 
 FROM runner AS app
-
