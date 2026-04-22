@@ -1,6 +1,16 @@
 # Deployment Guide — Fr. Yesudas Ministries
 
-This project is fully containerised and portable. Any machine with **Docker** and **Docker Compose** can run it — and the same image deploys directly to Kubernetes.
+This project supports **two deployment paths** — both use the same Docker image:
+
+| | Docker Compose | Kubernetes |
+|-|---------------|------------|
+| **Best for** | Local dev, single VPS | Production clusters, auto-scaling |
+| **Start** | `make compose-up` | `make k8s-deploy` |
+| **Scale** | Manual (one server) | Auto (2–10 pods via HPA) |
+| **TLS** | Nginx + Certbot (manual) | cert-manager + Let's Encrypt (auto) |
+| **Complexity** | Simple | More setup, more control |
+
+A `Makefile` at the project root manages both paths — see [all commands](#makefile-commands).
 
 ---
 
@@ -22,6 +32,34 @@ This project is fully containerised and portable. Any machine with **Docker** an
 13. [Database Management](#database-management)
 14. [Admin Panel](#admin-panel)
 15. [Troubleshooting](#troubleshooting)
+
+---
+
+## Makefile Commands
+
+Run `make help` to see all commands. Quick reference:
+
+```bash
+# ── Build ──────────────────────────────────────────────────────────
+make build              # Build app + migrator Docker images locally
+make push               # Build and push both images to registry
+
+# ── Docker Compose (local / single server) ─────────────────────────
+make compose-up         # Start everything
+make compose-down       # Stop
+make compose-restart    # Rebuild and restart
+make compose-seed       # Seed database (first time only)
+make compose-logs       # Tail app logs
+make compose-clean      # Remove containers + all data (irreversible)
+
+# ── Kubernetes (production cluster) ────────────────────────────────
+make k8s-deploy         # Deploy all manifests to cluster
+make k8s-restart        # Rolling restart — zero downtime
+make k8s-migrate        # Re-run Prisma migrations
+make k8s-status         # Show pods, services, ingress
+make k8s-logs           # Tail app logs
+make k8s-release        # push + migrate + restart (full release)
+```
 
 ---
 

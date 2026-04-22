@@ -1,5 +1,9 @@
 # One-shot Job that runs Prisma migrations before the app starts.
 # Re-apply this job after every deployment to run any new migrations.
+#
+# Uses the :migrator image tag (built from the `migrator` Dockerfile stage)
+# which has node_modules + prisma CLI. The :latest app image is a minimal
+# standalone server and does NOT have the prisma CLI.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -12,8 +16,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: migrate
-          # Use the same image as the app — the migrator build target is baked in
-          image: ghcr.io/sibanando/yesudas-ministries:latest
+          image: ghcr.io/sibanando/yesudas-ministries:migrator
           command:
             - sh
             - -c
