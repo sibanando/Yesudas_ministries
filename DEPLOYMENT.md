@@ -1,6 +1,6 @@
 # Deployment Guide — Fr. Yesudas Ministries
 
-This project is fully containerised and portable. Any machine with **Docker** and **Docker Compose** can run it.
+This project is fully containerised and portable. Any machine with **Docker** and **Docker Compose** can run it — and the same image deploys directly to Kubernetes.
 
 ---
 
@@ -8,6 +8,7 @@ This project is fully containerised and portable. Any machine with **Docker** an
 
 1. [Tech Stack](#tech-stack)
 2. [Project Structure](#project-structure)
+
 3. [Environment Variables](#environment-variables)
 4. [Local Development (without Docker)](#local-development-without-docker)
 5. [Docker Setup (recommended)](#docker-setup-recommended)
@@ -16,10 +17,11 @@ This project is fully containerised and portable. Any machine with **Docker** an
 8. [Deploy to Render](#deploy-to-render)
 9. [Deploy to Fly.io](#deploy-to-flyio)
 10. [Deploy to Google Cloud Run](#deploy-to-google-cloud-run)
-11. [Nginx + SSL (production)](#nginx--ssl-production)
-12. [Database Management](#database-management)
-13. [Admin Panel](#admin-panel)
-14. [Troubleshooting](#troubleshooting)
+11. [Deploy to Kubernetes](#deploy-to-kubernetes)
+12. [Nginx + SSL (production)](#nginx--ssl-production)
+13. [Database Management](#database-management)
+14. [Admin Panel](#admin-panel)
+15. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -326,6 +328,179 @@ gcloud run deploy yesudas-ministries \
 # 3. Use Cloud SQL (PostgreSQL) for the database
 # Create a Cloud SQL instance and connect via DATABASE_URL
 ```
+
+---
+
+## Deploy to Kubernetes
+
+The same Docker image that runs locally via Docker Compose deploys directly to any Kubernetes cluster — **no changes to the image needed**.
+
+All manifest files are in the `k8s/` directory.
+
+### K8s Files Overview
+
+| File | Purpose |
+|------|---------|
+| `k8s/namespace.yaml` | Dedicated namespace `yesudas-ministries` |
+| `k8s/secret.yaml` | Sensitive values (passwords, API keys) |
+| `k8s/configmap.yaml` | Non-sensitive config (URLs, SMTP host) |
+| `k8s/postgres.yaml` | PostgreSQL Deployment + PVC + Service |
+| `k8s/migrate-job.yaml` | One-shot Job to run Prisma migrations |
+| `k8s/app.yaml` | App Deployment (2 replicas) + ClusterIP Service |
+| `k8s/ingress.yaml` | Nginx Ingress + Let's Encrypt TLS |
+| `k8s/hpa.yaml` | Horizontal Pod Autoscaler (2–10 pods) |
+
+---
+
+### Prerequisites
+
+```bash
+# A running Kubernetes cluster (any of the below)
+# - Local:  minikube, kind, k3s
+# - Cloud:  GKE (Google), AKS (Azure), EKS (AWS)
+
+kubectl version --client
+
+# Install nginx ingress controller
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/cloud/deploy.yaml
+
+# Install cert-manager (for automatic SSL)
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.yaml
+```
+
+---
+
+### Step 1 — Push your image to a registry
+
+Kubernetes pulls images from a container registry. Push to GitHub Container Registry (free):
+
+```bash
+# Login to GHCR
+echo $GITHUB_TOKEN | docker login ghcr.io -u sibanando --password-stdin
+
+# Build and tag
+docker build -t ghcr.io/sibanando/yesudas-ministries:latest .
+
+# Push
+docker push ghcr.io/sibanando/yesudas-ministries:latest
+```
+
+Update the `image:` field in `k8s/app.yaml` and `k8s/migrate-job.yaml` to your registry URL.
+
+---
+
+### Step 2 — Fill in secrets
+
+Edit `k8s/secret.yaml` — encode each value with:
+
+```bash
+echo -n "your_actual_value" | base64
+```
+
+Example:
+```bash
+echo -n "my-strong-password" | base64
+# Output: bXktc3Ryb25nLXBhc3N3b3Jk
+```
+
+Replace every `<base64-encoded-value>` placeholder in `k8s/secret.yaml`.
+
+> Never commit real secrets to git. Use [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets) or your cloud provider's secret manager in production.
+
+---
+
+### Step 3 — Deploy
+
+```bash
+# Create namespace
+kubectl apply -f k8s/namespace.yaml
+
+# Apply secrets and config
+kubectl apply -f k8s/secret.yaml
+kubectl apply -f k8s/configmap.yaml
+
+# Start PostgreSQL
+kubectl apply -f k8s/postgres.yaml
+
+# Wait for PostgreSQL to be ready
+kubectl wait --for=condition=ready pod -l app=postgres -n yesudas-ministries --timeout=60s
+
+# Run database migrations
+kubectl apply -f k8s/migrate-job.yaml
+kubectl wait --for=condition=complete job/prisma-migrate -n yesudas-ministries --timeout=120s
+
+# Deploy the app
+kubectl apply -f k8s/app.yaml
+
+# Set up ingress + TLS
+kubectl apply -f k8s/ingress.yaml
+
+# Enable autoscaling
+kubectl apply -f k8s/hpa.yaml
+```
+
+Or apply everything at once:
+
+```bash
+kubectl apply -f k8s/
+```
+
+---
+
+### Step 4 — Verify
+
+```bash
+# Check all pods are running
+kubectl get pods -n yesudas-ministries
+
+# Check services
+kubectl get svc -n yesudas-ministries
+
+# Check ingress (shows assigned IP)
+kubectl get ingress -n yesudas-ministries
+
+# Watch pod logs
+kubectl logs -f deployment/yesudas-app -n yesudas-ministries
+```
+
+Expected output:
+```
+NAME                             READY   STATUS      RESTARTS
+postgres-xxx                     1/1     Running     0
+prisma-migrate-xxx               0/1     Completed   0
+yesudas-app-xxx                  1/1     Running     0
+yesudas-app-yyy                  1/1     Running     0
+```
+
+---
+
+### Updating the app
+
+```bash
+# Build and push new image
+docker build -t ghcr.io/sibanando/yesudas-ministries:latest .
+docker push ghcr.io/sibanando/yesudas-ministries:latest
+
+# Rolling restart (zero downtime — 2 replicas means one stays up)
+kubectl rollout restart deployment/yesudas-app -n yesudas-ministries
+
+# Run migrations if schema changed
+kubectl delete job prisma-migrate -n yesudas-ministries
+kubectl apply -f k8s/migrate-job.yaml
+```
+
+---
+
+### Cluster options
+
+| Cluster | Free tier | Notes |
+|---------|-----------|-------|
+| **Minikube** | Yes (local) | Best for testing K8s locally |
+| **k3s** | Yes (VPS) | Lightweight, runs on a $5 VPS |
+| **GKE Autopilot** | $74/mo | Google-managed, no node management |
+| **AKS** | Free control plane | Pay only for VMs |
+| **EKS** | $0.10/hr control plane | AWS managed |
+| **DigitalOcean K8s** | $12/mo | Simplest managed K8s |
 
 ---
 

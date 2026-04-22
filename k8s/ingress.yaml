@@ -1,0 +1,61 @@
+# Requires an Ingress controller installed in your cluster.
+# Install nginx ingress controller:
+#   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/cloud/deploy.yaml
+#
+# For TLS, cert-manager handles Let's Encrypt automatically.
+# Install cert-manager:
+#   kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.yaml
+---
+# ── Let's Encrypt ClusterIssuer ───────────────────────────────────
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@fryesudasministries.com
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+---
+# ── Ingress ───────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: yesudas-ingress
+  namespace: yesudas-ministries
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - fryesudasministries.com
+        - www.fryesudasministries.com
+      secretName: yesudas-tls
+  rules:
+    - host: fryesudasministries.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: yesudas-app
+                port:
+                  number: 80
+    - host: www.fryesudasministries.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: yesudas-app
+                port:
+                  number: 80

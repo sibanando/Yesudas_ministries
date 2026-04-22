@@ -1,0 +1,47 @@
+# One-shot Job that runs Prisma migrations before the app starts.
+# Re-apply this job after every deployment to run any new migrations.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: prisma-migrate
+  namespace: yesudas-ministries
+spec:
+  ttlSecondsAfterFinished: 120
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          # Use the same image as the app — the migrator build target is baked in
+          image: ghcr.io/sibanando/yesudas-ministries:latest
+          command:
+            - sh
+            - -c
+            - |
+              npx prisma migrate deploy
+              if [ "$SEED_DB" = "true" ]; then
+                npx tsx prisma/seed.ts
+              fi
+          env:
+            - name: DATABASE_URL
+              value: postgresql://postgres:$(POSTGRES_PASSWORD)@postgres:5432/yesudas_ministries
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: yesudas-secrets
+                  key: POSTGRES_PASSWORD
+            - name: ADMIN_SEED_EMAIL
+              valueFrom:
+                configMapKeyRef:
+                  name: yesudas-config
+                  key: ADMIN_SEED_EMAIL
+            - name: ADMIN_SEED_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: yesudas-secrets
+                  key: ADMIN_SESSION_SECRET
+            - name: SEED_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: yesudas-config
+                  key: SEED_DB

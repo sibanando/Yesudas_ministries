@@ -1,0 +1,151 @@
+# ── App Deployment ────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yesudas-app
+  namespace: yesudas-ministries
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: yesudas-app
+  template:
+    metadata:
+      labels:
+        app: yesudas-app
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/sibanando/yesudas-ministries:latest
+          ports:
+            - containerPort: 3000
+          env:
+            # Database
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: yesudas-secrets
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: postgresql://postgres:$(POSTGRES_PASSWORD)@postgres:5432/yesudas_ministries
+            # Auth
+            - name: ADMIN_SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: yesudas-secrets
+                  key: ADMIN_SESSION_SECRET
+            # Email
+            - name: SMTP_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: yesudas-config
+                  key: SMTP_HOST
+            - name: SMTP_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: yesudas-config
+                  key: SMTP_PORT
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: yesudas-secrets
+                  key: SMTP_USER
+            - name: SMTP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: yesudas-secrets
+                  key: SMTP_PASS
+            - name: CONTACT_EMAIL_TO
+              valueFrom:
+                configMapKeyRef:
+                  name: yesudas-config
+                  key: CONTACT_EMAIL_TO
+            # Site
+            - name: NEXT_PUBLIC_SITE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: yesudas-config
+                  key: NEXT_PUBLIC_SITE_URL
+            # YouTube
+            - name: YOUTUBE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: yesudas-secrets
+                  key: YOUTUBE_API_KEY
+            - name: YOUTUBE_CHANNEL_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: yesudas-config
+                  key: YOUTUBE_CHANNEL_ID
+            - name: YOUTUBE_CHANNEL_HANDLE
+              valueFrom:
+                configMapKeyRef:
+                  name: yesudas-config
+                  key: YOUTUBE_CHANNEL_HANDLE
+            # Razorpay
+            - name: RAZORPAY_KEY_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: yesudas-config
+                  key: NEXT_PUBLIC_RAZORPAY_KEY_ID
+            - name: RAZORPAY_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: yesudas-secrets
+                  key: RAZORPAY_KEY_SECRET
+            - name: NEXT_PUBLIC_RAZORPAY_KEY_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: yesudas-config
+                  key: NEXT_PUBLIC_RAZORPAY_KEY_ID
+            # Stripe
+            - name: STRIPE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: yesudas-secrets
+                  key: STRIPE_SECRET_KEY
+            - name: STRIPE_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: yesudas-secrets
+                  key: STRIPE_WEBHOOK_SECRET
+            - name: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: yesudas-config
+                  key: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+---
+# ── App Service ───────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: yesudas-app
+  namespace: yesudas-ministries
+spec:
+  selector:
+    app: yesudas-app
+  ports:
+    - port: 80
+      targetPort: 3000
+  type: ClusterIP

@@ -1,0 +1,17 @@
+# Non-sensitive configuration values
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yesudas-config
+  namespace: yesudas-ministries
+data:
+  NEXT_PUBLIC_SITE_URL: "https://fryesudasministries.com"
+  SMTP_HOST: "smtp.gmail.com"
+  SMTP_PORT: "587"
+  CONTACT_EMAIL_TO: "admin@fryesudasministries.com"
+  YOUTUBE_CHANNEL_ID: ""
+  YOUTUBE_CHANNEL_HANDLE: "@fryesudasministries"
+  NEXT_PUBLIC_RAZORPAY_KEY_ID: ""
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ""
+  ADMIN_SEED_EMAIL: "admin@fryesudasministries.com"
+  SEED_DB: "false"
