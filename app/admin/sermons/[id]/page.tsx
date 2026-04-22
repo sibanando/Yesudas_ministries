@@ -1,6 +1,8 @@
 import { verifyAdminSession } from "@/lib/dal";
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { SermonForm } from "@/components/admin/SermonForm";
@@ -36,6 +38,12 @@ export default async function EditSermonPage({ params }: PageProps) {
       <div className="flex-1 flex flex-col">
         <AdminHeader title="Edit Sermon" />
         <main className="flex-1 p-6">
+          <div className="mb-4">
+            <Link href="/admin/sermons" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[#1B2A4A] transition-colors">
+              <ChevronLeft className="h-4 w-4" /> Back to Sermons
+            </Link>
+            <p className="text-xs text-gray-400 mt-1 truncate max-w-xl">Editing: {sermon.title}</p>
+          </div>
           <SermonForm id={id} defaultValues={defaultValues} />
         </main>
       </div>

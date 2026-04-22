@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search } from "lucide-react";
 
 interface Event {
   id: string;
@@ -22,11 +22,16 @@ export default function AdminEventsPage() {
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     fetch("/api/admin/events")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to load");
+        return r.json();
+      })
       .then((d) => setEvents(d.events ?? []))
+      .catch(() => toast.error("Failed to load events. Please refresh."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -44,23 +49,44 @@ export default function AdminEventsPage() {
     }
   };
 
+  const filtered = events.filter(
+    (e) =>
+      e.title.toLowerCase().includes(search.toLowerCase()) ||
+      e.location.toLowerCase().includes(search.toLowerCase()) ||
+      e.type.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="flex min-h-screen">
       <AdminSidebar />
       <div className="flex-1 flex flex-col">
         <AdminHeader title="Events" />
         <main className="flex-1 p-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
             <p className="text-sm text-gray-500">{events.length} event{events.length !== 1 ? "s" : ""}</p>
-            <Link href="/admin/events/new" className="flex items-center gap-2 px-4 py-2 bg-[#1B2A4A] text-white text-sm font-medium rounded-lg hover:bg-[#2a4070] transition-colors">
-              <Plus className="h-4 w-4" /> New Event
-            </Link>
+            <div className="flex items-center gap-3 flex-1 justify-end">
+              <div className="relative max-w-xs w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search events…"
+                  className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4A]"
+                />
+              </div>
+              <Link
+                href="/admin/events/new"
+                className="flex items-center gap-2 px-4 py-2 bg-[#1B2A4A] text-white text-sm font-medium rounded-lg hover:bg-[#2a4070] transition-colors whitespace-nowrap"
+              >
+                <Plus className="h-4 w-4" /> New Event
+              </Link>
+            </div>
           </div>
 
           {loading ? (
             <p className="text-sm text-gray-400">Loading…</p>
-          ) : events.length === 0 ? (
-            <p className="text-sm text-gray-400">No events yet.</p>
+          ) : filtered.length === 0 ? (
+            <p className="text-sm text-gray-400">{search ? "No events match your search." : "No events yet."}</p>
           ) : (
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <table className="w-full text-sm">
@@ -74,7 +100,7 @@ export default function AdminEventsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {events.map((event) => (
+                  {filtered.map((event) => (
                     <tr key={event.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">
                         <p className="font-medium text-gray-900">{event.title}</p>
@@ -92,7 +118,11 @@ export default function AdminEventsPage() {
                           <Link href={`/admin/events/${event.id}`} className="p-1.5 text-gray-400 hover:text-[#1B2A4A] transition-colors">
                             <Pencil className="h-4 w-4" />
                           </Link>
-                          <button onClick={() => setDeleteId(event.id)} className="p-1.5 text-gray-400 hover:text-red-600 transition-colors">
+                          <button
+                            onClick={() => setDeleteId(event.id)}
+                            disabled={deleting}
+                            className="p-1.5 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-40"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </button>
                         </div>

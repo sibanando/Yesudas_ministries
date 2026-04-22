@@ -16,7 +16,14 @@ export default function AdminMinistriesPage() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/ministries").then((r) => r.json()).then((d) => setMinistries(d.ministries ?? [])).finally(() => setLoading(false));
+    fetch("/api/admin/ministries")
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to load");
+        return r.json();
+      })
+      .then((d) => setMinistries(d.ministries ?? []))
+      .catch(() => toast.error("Failed to load ministries. Please refresh."))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleDelete = async () => {
@@ -60,7 +67,7 @@ export default function AdminMinistriesPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 justify-end">
                           <Link href={`/admin/ministries/${m.id}`} className="p-1.5 text-gray-400 hover:text-[#1B2A4A] transition-colors"><Pencil className="h-4 w-4" /></Link>
-                          <button onClick={() => setDeleteId(m.id)} className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                          <button onClick={() => setDeleteId(m.id)} disabled={deleting} className="p-1.5 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-40"><Trash2 className="h-4 w-4" /></button>
                         </div>
                       </td>
                     </tr>

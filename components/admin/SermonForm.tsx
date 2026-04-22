@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { FormField, inputCls } from "@/components/admin/FormField";
 
 const formSchema = z.object({
   videoId: z.string().min(1, "YouTube video ID is required"),
@@ -59,10 +60,7 @@ export function SermonForm({ id, defaultValues }: SermonFormProps) {
 
     if (!res.ok) {
       const data = await res.json();
-      const msg =
-        typeof data.error === "string"
-          ? data.error
-          : "Failed to save sermon.";
+      const msg = typeof data.error === "string" ? data.error : "Failed to save sermon.";
       toast.error(msg);
       return;
     }
@@ -82,13 +80,9 @@ export function SermonForm({ id, defaultValues }: SermonFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 max-w-3xl">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="YouTube Video ID" error={errors.videoId?.message}>
+        <FormField label="YouTube Video ID" error={errors.videoId?.message}>
           <div className="flex gap-2">
-            <input
-              {...register("videoId")}
-              className={inputCls}
-              placeholder="dQw4w9WgXcQ"
-            />
+            <input {...register("videoId")} className={inputCls} placeholder="dQw4w9WgXcQ" />
             <button
               type="button"
               onClick={handleAutoFill}
@@ -97,71 +91,52 @@ export function SermonForm({ id, defaultValues }: SermonFormProps) {
               Auto-fill thumbnail
             </button>
           </div>
-        </Field>
-        <Field label="Title" error={errors.title?.message}>
+        </FormField>
+        <FormField label="Title" error={errors.title?.message}>
           <input {...register("title")} className={inputCls} placeholder="Sermon title" />
-        </Field>
+        </FormField>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Field label="Published Date" error={errors.publishedAt?.message}>
-          <input
-            {...register("publishedAt")}
-            className={inputCls}
-            placeholder="2026-03-23T10:00:00Z"
-          />
-        </Field>
-        <Field label="Duration" error={errors.duration?.message}>
+        <FormField label="Published Date" error={errors.publishedAt?.message}>
+          <input {...register("publishedAt")} className={inputCls} placeholder="2026-03-23T10:00:00Z" />
+        </FormField>
+        <FormField label="Duration" error={errors.duration?.message}>
           <input {...register("duration")} className={inputCls} placeholder="52:18" />
-        </Field>
-        <Field label="Series" error={errors.series?.message}>
+        </FormField>
+        <FormField label="Series" error={errors.series?.message}>
           <input {...register("series")} className={inputCls} placeholder="Gospel of John" />
-        </Field>
+        </FormField>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Field label="Thumbnail URL" error={errors.thumbnailUrl?.message}>
+        <FormField label="Thumbnail URL" error={errors.thumbnailUrl?.message}>
           <input {...register("thumbnailUrl")} className={inputCls} placeholder="https://i.ytimg.com/vi/.../hqdefault.jpg" />
-        </Field>
-        <Field label="View Count" error={errors.viewCount?.message}>
+        </FormField>
+        <FormField label="View Count" error={errors.viewCount?.message}>
           <input {...register("viewCount")} className={inputCls} placeholder="12345" />
-        </Field>
-        <Field label="Sort Order" error={errors.sortOrder?.message}>
-          <input
-            type="number"
-            {...register("sortOrder", { valueAsNumber: true })}
-            className={inputCls}
-            placeholder="0"
-          />
-        </Field>
+        </FormField>
+        <FormField label="Sort Order" error={errors.sortOrder?.message}>
+          <input type="number" {...register("sortOrder", { valueAsNumber: true })} className={inputCls} placeholder="0" />
+        </FormField>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Tags (comma-separated)" error={errors.tags?.message}>
-          <input
-            {...register("tags")}
-            className={inputCls}
-            placeholder="faith, gospel, prayer"
-          />
-        </Field>
-        <Field label="Published">
+        <FormField label="Tags (comma-separated)" error={errors.tags?.message}>
+          <input {...register("tags")} className={inputCls} placeholder="faith, gospel, prayer" />
+        </FormField>
+        <FormField label="Published">
           <label className="flex items-center gap-2 mt-2 cursor-pointer">
             <input type="checkbox" {...register("published")} className="w-4 h-4 accent-[#1B2A4A]" />
             <span className="text-sm text-gray-700">Published</span>
           </label>
-        </Field>
+        </FormField>
       </div>
 
-      <Field label="Description" error={errors.description?.message}>
-        <textarea
-          {...register("description")}
-          rows={5}
-          className={inputCls}
-          placeholder="Sermon description..."
-        />
-      </Field>
+      <FormField label="Description" error={errors.description?.message}>
+        <textarea {...register("description")} rows={5} className={inputCls} placeholder="Sermon description..." />
+      </FormField>
 
-      {/* Preview */}
       {videoId && (
         <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
           <p className="text-xs font-medium text-gray-500 mb-2">YouTube Preview</p>
@@ -192,24 +167,3 @@ export function SermonForm({ id, defaultValues }: SermonFormProps) {
     </form>
   );
 }
-
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
-      {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
-    </div>
-  );
-}
-
-const inputCls =
-  "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4A] focus:border-transparent";

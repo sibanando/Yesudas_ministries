@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { FormField, inputCls } from "@/components/admin/FormField";
 
 const formSchema = z.object({
   title: z.string().min(1).max(200),
@@ -61,31 +62,31 @@ export function EventForm({ id, defaultValues }: EventFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 max-w-2xl">
-      <Field label="Title" error={errors.title?.message}>
+      <FormField label="Title" error={errors.title?.message}>
         <input {...register("title")} className={inputCls} placeholder="Event title" />
-      </Field>
+      </FormField>
 
-      <Field label="Description" error={errors.description?.message}>
+      <FormField label="Description" error={errors.description?.message}>
         <textarea {...register("description")} rows={3} className={inputCls} />
-      </Field>
+      </FormField>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Field label="Date (YYYY-MM-DD)" error={errors.date?.message}>
-          <input {...register("date")} className={inputCls} placeholder="2026-04-15" />
-        </Field>
-        <Field label="Start Time" error={errors.time?.message}>
+        <FormField label="Date" error={errors.date?.message}>
+          <input type="date" {...register("date")} className={inputCls} />
+        </FormField>
+        <FormField label="Start Time" error={errors.time?.message}>
           <input {...register("time")} className={inputCls} placeholder="9:00 AM" />
-        </Field>
-        <Field label="End Time" error={errors.endTime?.message}>
+        </FormField>
+        <FormField label="End Time" error={errors.endTime?.message}>
           <input {...register("endTime")} className={inputCls} placeholder="11:00 AM" />
-        </Field>
+        </FormField>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Location" error={errors.location?.message}>
+        <FormField label="Location" error={errors.location?.message}>
           <input {...register("location")} className={inputCls} placeholder="Main Sanctuary" />
-        </Field>
-        <Field label="Type" error={errors.type?.message}>
+        </FormField>
+        <FormField label="Type" error={errors.type?.message}>
           <select {...register("type")} className={inputCls}>
             <option value="sunday-service">Sunday Service</option>
             <option value="special">Special</option>
@@ -94,12 +95,12 @@ export function EventForm({ id, defaultValues }: EventFormProps) {
             <option value="youth">Youth</option>
             <option value="community">Community</option>
           </select>
-        </Field>
+        </FormField>
       </div>
 
-      <Field label="Registration URL" error={errors.registrationUrl?.message}>
+      <FormField label="Registration URL" error={errors.registrationUrl?.message}>
         <input {...register("registrationUrl")} className={inputCls} placeholder="https://..." />
-      </Field>
+      </FormField>
 
       <label className="flex items-center gap-2 cursor-pointer">
         <input type="checkbox" {...register("isRecurring")} className="w-4 h-4 accent-[#1B2A4A]" />
@@ -125,16 +126,3 @@ export function EventForm({ id, defaultValues }: EventFormProps) {
     </form>
   );
 }
-
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
-      {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
-    </div>
-  );
-}
-
-const inputCls =
-  "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4A] focus:border-transparent";

@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { FormField, inputCls } from "@/components/admin/FormField";
 
 const formSchema = z.object({
   slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/),
@@ -73,12 +74,10 @@ export function BlogForm({ id, defaultValues }: BlogFormProps) {
     router.refresh();
   };
 
-  const title = watch("title");
-
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 max-w-3xl">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Title" error={errors.title?.message}>
+        <FormField label="Title" error={errors.title?.message}>
           <input
             {...register("title")}
             onBlur={(e) => {
@@ -89,69 +88,60 @@ export function BlogForm({ id, defaultValues }: BlogFormProps) {
             className={inputCls}
             placeholder="Post title"
           />
-        </Field>
-        <Field label="Slug" error={errors.slug?.message}>
+        </FormField>
+        <FormField label="Slug" error={errors.slug?.message}>
           <input {...register("slug")} className={inputCls} placeholder="post-slug" />
-        </Field>
+        </FormField>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Field label="Date (YYYY-MM-DD)" error={errors.date?.message}>
-          <input {...register("date")} className={inputCls} placeholder="2026-01-15" />
-        </Field>
-        <Field label="Author" error={errors.author?.message}>
+        <FormField label="Date" error={errors.date?.message}>
+          <input type="date" {...register("date")} className={inputCls} />
+        </FormField>
+        <FormField label="Author" error={errors.author?.message}>
           <input {...register("author")} className={inputCls} placeholder="Fr. Yesudas" />
-        </Field>
-        <Field label="Author Role" error={errors.authorRole?.message}>
+        </FormField>
+        <FormField label="Author Role" error={errors.authorRole?.message}>
           <input {...register("authorRole")} className={inputCls} placeholder="Senior Pastor" />
-        </Field>
+        </FormField>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Field label="Read Time" error={errors.readTime?.message}>
+        <FormField label="Read Time" error={errors.readTime?.message}>
           <input {...register("readTime")} className={inputCls} placeholder="5 min read" />
-        </Field>
-        <Field label="Category" error={errors.category?.message}>
+        </FormField>
+        <FormField label="Category" error={errors.category?.message}>
           <select {...register("category")} className={inputCls}>
             <option value="devotional">Devotional</option>
             <option value="teaching">Teaching</option>
             <option value="testimony">Testimony</option>
             <option value="ministry-update">Ministry Update</option>
           </select>
-        </Field>
-        <Field label="Published">
+        </FormField>
+        <FormField label="Published">
           <label className="flex items-center gap-2 mt-2 cursor-pointer">
             <input type="checkbox" {...register("published")} className="w-4 h-4 accent-[#1B2A4A]" />
             <span className="text-sm text-gray-700">Published</span>
           </label>
-        </Field>
+        </FormField>
       </div>
 
-      <Field label="Tags (comma-separated)" error={errors.tags?.message}>
-        <input
-          {...register("tags")}
-          className={inputCls}
-          placeholder="faith, gospel, prayer"
-        />
-      </Field>
+      <FormField label="Tags (comma-separated)" error={errors.tags?.message}>
+        <input {...register("tags")} className={inputCls} placeholder="faith, gospel, prayer" />
+      </FormField>
 
-      <Field label="Excerpt" error={errors.excerpt?.message}>
-        <textarea
-          {...register("excerpt")}
-          rows={3}
-          className={inputCls}
-          placeholder="Short excerpt for the blog listing..."
-        />
-      </Field>
+      <FormField label="Excerpt" error={errors.excerpt?.message}>
+        <textarea {...register("excerpt")} rows={3} className={inputCls} placeholder="Short excerpt for the blog listing..." />
+      </FormField>
 
-      <Field label="Content (HTML)" error={errors.content?.message}>
+      <FormField label="Content (HTML)" error={errors.content?.message}>
         <textarea
           {...register("content")}
           rows={16}
           className={`${inputCls} font-mono text-xs`}
           placeholder="<p>Your content here...</p>"
         />
-      </Field>
+      </FormField>
 
       <div className="flex gap-3 pt-2">
         <button
@@ -172,24 +162,3 @@ export function BlogForm({ id, defaultValues }: BlogFormProps) {
     </form>
   );
 }
-
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
-      {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
-    </div>
-  );
-}
-
-const inputCls =
-  "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4A] focus:border-transparent";

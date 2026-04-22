@@ -16,7 +16,14 @@ export default function AdminTeamPage() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/team").then((r) => r.json()).then((d) => setMembers(d.members ?? [])).finally(() => setLoading(false));
+    fetch("/api/admin/team")
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to load");
+        return r.json();
+      })
+      .then((d) => setMembers(d.members ?? []))
+      .catch(() => toast.error("Failed to load team members. Please refresh."))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleDelete = async () => {
@@ -60,7 +67,7 @@ export default function AdminTeamPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 justify-end">
                           <Link href={`/admin/team/${m.id}`} className="p-1.5 text-gray-400 hover:text-[#1B2A4A] transition-colors"><Pencil className="h-4 w-4" /></Link>
-                          <button onClick={() => setDeleteId(m.id)} className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                          <button onClick={() => setDeleteId(m.id)} disabled={deleting} className="p-1.5 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-40"><Trash2 className="h-4 w-4" /></button>
                         </div>
                       </td>
                     </tr>
