@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 
+function escapeHtml(str: string) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
 const contactSchema = z.object({
   name: z.string().min(2).max(100),
   email: z.string().email(),
@@ -23,6 +32,11 @@ export async function POST(req: NextRequest) {
     }
 
     const { name, email, phone, subject, message } = parsed.data;
+    const safeName = escapeHtml(name);
+    const safeEmail = escapeHtml(email);
+    const safePhone = phone ? escapeHtml(phone) : undefined;
+    const safeSubject = escapeHtml(subject);
+    const safeMessage = escapeHtml(message);
 
     // Send email via Nodemailer if SMTP is configured
     if (
@@ -60,21 +74,21 @@ export async function POST(req: NextRequest) {
               <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
                 <tr>
                   <td style="padding: 6px 0; font-weight: 600; color: #1B2A4A; width: 100px;">Name:</td>
-                  <td style="padding: 6px 0; color: #333;">${name}</td>
+                  <td style="padding: 6px 0; color: #333;">${safeName}</td>
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; font-weight: 600; color: #1B2A4A;">Email:</td>
-                  <td style="padding: 6px 0; color: #333;"><a href="mailto:${email}">${email}</a></td>
+                  <td style="padding: 6px 0; color: #333;"><a href="mailto:${safeEmail}">${safeEmail}</a></td>
                 </tr>
-                ${phone ? `<tr><td style="padding: 6px 0; font-weight: 600; color: #1B2A4A;">Phone:</td><td style="padding: 6px 0; color: #333;">${phone}</td></tr>` : ""}
+                ${safePhone ? `<tr><td style="padding: 6px 0; font-weight: 600; color: #1B2A4A;">Phone:</td><td style="padding: 6px 0; color: #333;">${safePhone}</td></tr>` : ""}
                 <tr>
                   <td style="padding: 6px 0; font-weight: 600; color: #1B2A4A;">Subject:</td>
-                  <td style="padding: 6px 0; color: #333;">${subject}</td>
+                  <td style="padding: 6px 0; color: #333;">${safeSubject}</td>
                 </tr>
               </table>
               <div style="border-top: 1px solid #e8d9c4; padding-top: 16px;">
                 <p style="font-weight: 600; color: #1B2A4A; margin-bottom: 8px;">Message:</p>
-                <p style="color: #555; line-height: 1.6; white-space: pre-wrap;">${message}</p>
+                <p style="color: #555; line-height: 1.6; white-space: pre-wrap;">${safeMessage}</p>
               </div>
             </div>
             <div style="padding: 12px; background: #FDF6EC; text-align: center; font-size: 12px; color: #888;">

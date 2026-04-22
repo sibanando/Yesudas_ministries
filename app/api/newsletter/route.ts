@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 
+function escapeHtml(str: string) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
 const schema = z.object({
   email: z.string().email(),
   name: z.string().min(1).max(100).optional(),
@@ -20,6 +29,10 @@ export async function POST(req: NextRequest) {
     }
 
     const { email, name } = parsed.data;
+    const safeEmail = escapeHtml(email);
+    const safeName = name ? escapeHtml(name) : undefined;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://fryesudasministries.com";
+    const unsubscribeUrl = `${siteUrl}/newsletter/unsubscribe?email=${encodeURIComponent(email)}`;
 
     // Persist subscriber to database (upsert — won't fail if already subscribed)
     prisma.newsletterSubscriber
@@ -58,8 +71,8 @@ export async function POST(req: NextRequest) {
               <p style="color:#fff;margin:4px 0 0;font-size:13px;">New Newsletter Subscriber</p>
             </div>
             <div style="padding:24px;background:#fff;border:1px solid #e8d9c4;">
-              <p style="color:#333;"><strong>Name:</strong> ${name ?? "—"}</p>
-              <p style="color:#333;"><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+              <p style="color:#333;"><strong>Name:</strong> ${safeName ?? "—"}</p>
+              <p style="color:#333;"><strong>Email:</strong> <a href="mailto:${safeEmail}">${safeEmail}</a></p>
             </div>
           </div>`,
       });
@@ -76,13 +89,14 @@ export async function POST(req: NextRequest) {
               <p style="color:#fff;margin:8px 0 0;font-size:14px;">Thank you for subscribing!</p>
             </div>
             <div style="padding:28px;background:#fff;border:1px solid #e8d9c4;">
-              <p style="color:#1B2A4A;font-size:16px;">Dear ${name ?? "Friend"},</p>
+              <p style="color:#1B2A4A;font-size:16px;">Dear ${safeName ?? "Friend"},</p>
               <p style="color:#555;line-height:1.7;">Thank you for joining our newsletter family. We will keep you updated with devotionals, ministry news, upcoming events, and testimonies of God's faithfulness.</p>
               <p style="color:#555;line-height:1.7;"><em>"He who began a good work in you will carry it on to completion until the day of Christ Jesus."</em> — Philippians 1:6</p>
               <p style="color:#555;">Blessings,<br/><strong>Fr. Yesudas Ministries</strong></p>
             </div>
             <div style="padding:12px;background:#FDF6EC;text-align:center;font-size:11px;color:#888;">
-              You are receiving this because you subscribed at fryesudasministries.com
+              You are receiving this because you subscribed at fryesudasministries.com<br/>
+              <a href="${unsubscribeUrl}" style="color:#888;text-decoration:underline;">Unsubscribe</a>
             </div>
           </div>`,
       });

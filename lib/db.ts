@@ -1,3 +1,4 @@
+import "@/lib/env";
 import { PrismaClient } from "@/lib/generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
 
