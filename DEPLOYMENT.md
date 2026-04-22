@@ -206,8 +206,9 @@ git clone https://github.com/sibanando/Yesudas_ministries.git
 cd Yesudas_ministries
 
 # 2. Create your .env file
-cp .env.example .env
+touch .env
 # Edit .env — fill in POSTGRES_PASSWORD, ADMIN_SESSION_SECRET, SMTP_*, etc.
+# See DOCKER_NOTES.md for full variable reference and step-by-step setup.
 
 # 3. Build and start (includes DB migrations)
 docker compose up -d --build
@@ -218,6 +219,8 @@ SEED_DB=true docker compose up -d --build
 
 App runs at `http://localhost:4500`
 Admin at `http://localhost:4500/admin`
+
+> PostgreSQL is also exposed on the host at `localhost:5433` (for external DB tools). Inside Compose, the DB host is `postgres:5432`.
 
 ### Common commands
 

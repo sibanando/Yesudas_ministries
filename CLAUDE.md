@@ -33,6 +33,7 @@ Next.js 16.2.1, React 19, TypeScript, Tailwind CSS 4, App Router.
 - `Donation.amount` is stored in smallest currency unit (paise/cents) — divide by 100 for display.
 - Connection: `postgresql://USER:PASSWORD@HOST:5432/yesudas_ministries`
 - Seed: `npx prisma db seed` (runs `prisma/seed.ts` via `tsx`)
+- `prisma.config.ts` at project root — Prisma 7 config file defining schema path, migrations path, and seed command.
 
 ---
 
@@ -55,8 +56,8 @@ Next.js 16.2.1, React 19, TypeScript, Tailwind CSS 4, App Router.
 - Dashboard (`page.tsx`) — uses `Promise.all` for parallel Prisma counts.
 
 ### API Routes (`app/api/admin/`)
-All 14 routes call `verifyAdminSessionForApi()` first, return 401 if null:
-`stats`, `blog`, `blog/[id]`, `events`, `events/[id]`, `ministries`, `ministries/[id]`, `team`, `team/[id]`, `newsletter`, `newsletter/export` (CSV download), `contacts`, `contacts/[id]` (PATCH mark-read), `donations`.
+All 16 routes call `verifyAdminSessionForApi()` first, return 401 if null:
+`stats`, `blog`, `blog/[id]`, `events`, `events/[id]`, `ministries`, `ministries/[id]`, `team`, `team/[id]`, `newsletter`, `newsletter/export` (CSV download), `contacts`, `contacts/[id]` (PATCH mark-read), `donations`, `sermons`, `sermons/[id]`.
 
 ### Admin UI Components (`components/admin/`)
 All forms: `"use client"`, `react-hook-form` + `zodResolver`, `useRouter` for redirect after save, `sonner` toast for feedback.
@@ -73,7 +74,7 @@ Tags fields use comma-separated string input with `.transform(s => s.split(",").
 | `/blog/[slug]` | `prisma.blogPost.findUnique({ where: { slug, published: true } })` |
 | `/events` | `prisma.churchEvent.findMany()` → `mapEvent()` |
 | `/ministries` | `prisma.ministry.findMany()` → `mapMinistry()` |
-| `/sermons` | YouTube API via `lib/youtube.ts` — `mockSermons` in `lib/data.ts` as fallback — **do not migrate to DB** |
+| `/sermons` | `prisma.sermon.findMany({ where: { published: true } })` → `mapSermon()` — now DB-backed like other pages |
 
 ---
 
@@ -111,13 +112,13 @@ prisma.someModel.create({ data: { ... } })
 
 ## lib/data.ts
 
-**Do NOT delete.** `mockSermons` is still used by `lib/youtube.ts` as API fallback. Only blog/events/ministries/team data has been migrated to the database.
+**Do NOT delete.** `mockSermons` is still used by `lib/youtube.ts` as API fallback. All content (blog, events, ministries, team, sermons) has been migrated to the database.
 
 ---
 
 ## Docker (preferred)
 
-Files: `Dockerfile`, `docker-compose.yml`, `.dockerignore`, `docker-entrypoint.sh`, `.env.docker`.
+Files: `Dockerfile`, `docker-compose.yml`, `.dockerignore`, `docker-entrypoint.sh`, `DOCKER_NOTES.md` (detailed setup and troubleshooting).
 
 - `next.config.ts` has `output: "standalone"` — produces a minimal self-contained server in `.next/standalone/`.
 - `prisma/schema.prisma` has `binaryTargets = ["native", "linux-musl-openssl-3.0.x"]` — required for Alpine Linux containers.
@@ -129,15 +130,16 @@ Files: `Dockerfile`, `docker-compose.yml`, `.dockerignore`, `docker-entrypoint.s
 - All env vars are passed from a `.env` file at the project root (copy `.env.docker` → `.env` and fill in values).
 
 ```bash
-# First time
-cp .env.docker .env
-# Edit .env — set POSTGRES_PASSWORD, ADMIN_SESSION_SECRET, SMTP_*, etc.
+# First time — create .env and fill in required values
+touch .env
+# Edit .env — set POSTGRES_PASSWORD, ADMIN_SESSION_SECRET, etc.
+# See DOCKER_NOTES.md for full variable reference and step-by-step setup.
 
 # Build and run (includes migrations)
 docker compose up -d --build
 
-# Optional seed (first time only)
-# SEED_DB=true docker compose up -d --build
+# Optional seed (first time only) — set SEED_DB=true in .env, then:
+# docker compose up -d --build
 
 # Stop
 docker compose down
