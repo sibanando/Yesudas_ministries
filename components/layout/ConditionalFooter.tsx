@@ -1,9 +1,8 @@
 "use client";
 import { usePathname } from "next/navigation";
-import { Footer } from "./Footer";
 
-export function ConditionalFooter() {
+export function ConditionalFooter({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   if (pathname.startsWith("/admin")) return null;
-  return <Footer />;
+  return <>{children}</>;
 }

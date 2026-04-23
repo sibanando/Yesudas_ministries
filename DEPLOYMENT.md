@@ -609,6 +609,15 @@ docker compose exec app npx prisma migrate deploy
 npx prisma migrate deploy
 ```
 
+> **Note:** If the app container uses the `standalone` build (no `prisma` CLI inside the running container), run migrations via the dedicated `migrate` service:
+> ```bash
+> docker compose run --rm migrate
+> ```
+> Or apply the SQL directly to the database:
+> ```bash
+> docker compose exec postgres psql -U postgres -d yesudas_ministries -f migration.sql
+> ```
+
 ### Seed the database
 
 ```bash
@@ -657,6 +666,8 @@ cat backup_20260422.sql | docker compose exec -T postgres psql -U postgres -d ye
 | `/admin/contacts` | View contact submissions |
 | `/admin/donations` | View donations |
 | `/admin/newsletter` | View & export subscribers |
+| `/admin/service-times` | Manage service times shown in footer and contact page |
+| `/admin/settings` | Manage contact info (address, phone, email) shown in footer and contact page |
 
 **Default credentials** (change immediately after first login):
 - Email: `admin@fryesudasministries.com`

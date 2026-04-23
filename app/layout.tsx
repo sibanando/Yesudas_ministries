@@ -3,6 +3,7 @@ import { Playfair_Display, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "@/components/layout/Navigation";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
+import { FooterWrapper } from "@/components/layout/FooterWrapper";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -73,7 +74,9 @@ export default function RootLayout({
         <LanguageProvider>
           <Navigation />
           <main className="flex-1">{children}</main>
-          <ConditionalFooter />
+          <ConditionalFooter>
+            <FooterWrapper />
+          </ConditionalFooter>
           <Toaster position="bottom-right" richColors />
         </LanguageProvider>
       </body>

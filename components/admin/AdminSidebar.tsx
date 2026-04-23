@@ -12,6 +12,8 @@ import {
   MessageSquare,
   Heart,
   Video,
+  Clock,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +27,8 @@ const navItems = [
   { href: "/admin/newsletter", label: "Newsletter", icon: Mail },
   { href: "/admin/contacts", label: "Contacts", icon: MessageSquare },
   { href: "/admin/donations", label: "Donations", icon: Heart },
+  { href: "/admin/service-times", label: "Service Times", icon: Clock },
+  { href: "/admin/settings", label: "Site Settings", icon: Settings },
 ];
 
 export function AdminSidebar() {

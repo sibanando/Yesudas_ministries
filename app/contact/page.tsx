@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Mail, Phone, MapPin, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ContactForm } from "@/components/contact/ContactForm";
+import { getServiceTimes, getSiteSettings } from "@/lib/public-data";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Contact Us",
@@ -9,13 +12,8 @@ export const metadata: Metadata = {
     "Get in touch with Fr. Yesudas Ministries. We'd love to hear from you.",
 };
 
-const serviceTimes = [
-  { day: "Sunday", time: "9:00 AM – 11:00 AM", label: "Main Worship Service" },
-  { day: "Wednesday", time: "7:00 PM – 9:00 PM", label: "Prayer Night" },
-  { day: "Friday", time: "6:00 AM – 7:30 AM", label: "Early Morning Prayer" },
-];
-
-export default function ContactPage() {
+export default async function ContactPage() {
+  const [serviceTimes, settings] = await Promise.all([getServiceTimes(), getSiteSettings()]);
   return (
     <div className="flex flex-col">
       {/* Header */}
@@ -58,30 +56,26 @@ export default function ContactPage() {
                 <div className="flex flex-col gap-4">
                   <div className="flex items-start gap-3">
                     <MapPin className="h-5 w-5 text-[#D4A853] mt-0.5 shrink-0" />
-                    <p className="font-body text-sm text-white/80">
-                      Fr. Yesudas Ministries,
-                      <br />
-                      Visakhapatnam, Andhra Pradesh,
-                      <br />
-                      India
+                    <p className="font-body text-sm text-white/80 whitespace-pre-line">
+                      {settings.contact_address}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <Phone className="h-5 w-5 text-[#D4A853] shrink-0" />
                     <a
-                      href="tel:+91XXXXXXXXXX"
+                      href={settings.contact_phone_href}
                       className="font-body text-sm text-white/80 hover:text-[#D4A853] transition-colors"
                     >
-                      +91 XXXXX XXXXX
+                      {settings.contact_phone}
                     </a>
                   </div>
                   <div className="flex items-center gap-3">
                     <Mail className="h-5 w-5 text-[#D4A853] shrink-0" />
                     <a
-                      href="mailto:info@fryesudasministries.com"
+                      href={`mailto:${settings.contact_email}`}
                       className="font-body text-sm text-white/80 hover:text-[#D4A853] transition-colors"
                     >
-                      info@fryesudasministries.com
+                      {settings.contact_email}
                     </a>
                   </div>
                 </div>
@@ -98,7 +92,7 @@ export default function ContactPage() {
                 <div className="flex flex-col gap-4">
                   {serviceTimes.map((s) => (
                     <div
-                      key={s.day}
+                      key={s.id}
                       className="flex items-start justify-between gap-4 pb-4 border-b border-border/50 last:border-0 last:pb-0"
                     >
                       <div>

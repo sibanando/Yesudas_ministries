@@ -401,6 +401,33 @@ async function main() {
   await prisma.teamMember.createMany({ data: teamMembers });
   console.log("✓ Team members seeded:", teamMembers.length);
 
+  // Service times
+  await prisma.serviceTime.deleteMany({});
+  await prisma.serviceTime.createMany({
+    data: [
+      { day: "Sunday", time: "9:00 AM – 11:00 AM", label: "Main Worship Service", sortOrder: 0 },
+      { day: "Wednesday", time: "7:00 PM – 9:00 PM", label: "Prayer Night", sortOrder: 1 },
+      { day: "Friday", time: "6:00 AM – 7:30 AM", label: "Early Morning Prayer", sortOrder: 2 },
+    ],
+  });
+  console.log("✓ Service times seeded");
+
+  // Site settings
+  const siteSettings = [
+    { key: "contact_address", value: "Fr. Yesudas Ministries,\nVisakhapatnam, Andhra Pradesh,\nIndia" },
+    { key: "contact_phone", value: "+91 XXXXX XXXXX" },
+    { key: "contact_phone_href", value: "tel:+91XXXXXXXXXX" },
+    { key: "contact_email", value: "info@fryesudasministries.com" },
+  ];
+  for (const s of siteSettings) {
+    await prisma.siteSettings.upsert({
+      where: { key: s.key },
+      update: { value: s.value },
+      create: s,
+    });
+  }
+  console.log("✓ Site settings seeded");
+
   console.log("\n✅ Database seeding complete!");
 }
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Cross, Mail, Phone, MapPin } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { YoutubeIcon, FacebookIcon, InstagramIcon } from "@/components/shared/SocialIcons";
+import type { ServiceTimeData, SiteSettingsData } from "@/lib/public-data";
 
 const quickLinks = [
   { href: "/", label: "Home" },
@@ -14,13 +15,12 @@ const quickLinks = [
   { href: "/contact", label: "Contact" },
 ];
 
-const serviceTimes = [
-  { day: "Sunday", time: "9:00 AM – 11:00 AM", label: "Main Worship Service" },
-  { day: "Wednesday", time: "7:00 PM – 9:00 PM", label: "Prayer Night" },
-  { day: "Friday", time: "6:00 AM – 7:30 AM", label: "Early Morning Prayer" },
-];
+interface FooterProps {
+  serviceTimes: ServiceTimeData[];
+  settings: SiteSettingsData;
+}
 
-export function Footer() {
+export function Footer({ serviceTimes, settings }: FooterProps) {
   const year = new Date().getFullYear();
 
   return (
@@ -101,7 +101,7 @@ export function Footer() {
             </h3>
             <ul className="space-y-3">
               {serviceTimes.map((service) => (
-                <li key={service.day}>
+                <li key={service.id}>
                   <p className="text-sm font-semibold text-white">{service.day}</p>
                   <p className="text-xs text-white/70">{service.time}</p>
                   <p className="text-xs text-[#D4A853]">{service.label}</p>
@@ -118,28 +118,26 @@ export function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <MapPin className="h-4 w-4 text-[#D4A853] mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-white/70">
-                  Fr. Yesudas Ministries,<br />
-                  Visakhapatnam, Andhra Pradesh,<br />
-                  India
+                <p className="text-sm text-white/70 whitespace-pre-line">
+                  {settings.contact_address}
                 </p>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="h-4 w-4 text-[#D4A853] flex-shrink-0" />
                 <a
-                  href="tel:+91XXXXXXXXXX"
+                  href={settings.contact_phone_href}
                   className="text-sm text-white/70 hover:text-[#D4A853] transition-colors"
                 >
-                  +91 XXXXX XXXXX
+                  {settings.contact_phone}
                 </a>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="h-4 w-4 text-[#D4A853] flex-shrink-0" />
                 <a
-                  href="mailto:info@fryesudasministries.com"
+                  href={`mailto:${settings.contact_email}`}
                   className="text-sm text-white/70 hover:text-[#D4A853] transition-colors"
                 >
-                  info@fryesudasministries.com
+                  {settings.contact_email}
                 </a>
               </li>
             </ul>

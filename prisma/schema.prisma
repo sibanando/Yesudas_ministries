@@ -148,3 +148,23 @@ model Donation {
 
   @@map("donations")
 }
+
+model ServiceTime {
+  id        String   @id @default(cuid())
+  day       String
+  time      String
+  label     String
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("service_times")
+}
+
+model SiteSettings {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("site_settings")
+}

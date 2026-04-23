@@ -12,6 +12,7 @@ Next.js 16.2.1, React 19, TypeScript, Tailwind CSS 4, App Router.
 - All DB-backed public pages must have `export const dynamic = "force-dynamic"` — DB is not available at build time, so `generateStaticParams` cannot query it.
 - Do NOT use `use cache` on admin pages — they need fresh data always.
 - `unstable_cache` in `lib/youtube.ts` still works in Next.js 16.2.1 — do not touch it.
+- **`revalidateTag` in Next.js 16 requires 2 arguments**: `revalidateTag(tag, profile)` where profile is `string | { expire?: number }`. Use `revalidateTag("my-tag", { expire: 0 })` to immediately bust a cache tag.
 
 ---
 
@@ -31,6 +32,8 @@ Next.js 16.2.1, React 19, TypeScript, Tailwind CSS 4, App Router.
 - `tags` fields are stored as `Json` in DB — `lib/mappers.ts` casts them to `string[]`.
 - `date` fields on `BlogPost` and `ChurchEvent` are `String` (format `"YYYY-MM-DD"`) to match existing TypeScript types.
 - `Donation.amount` is stored in smallest currency unit (paise/cents) — divide by 100 for display.
+- `SiteSettings` stores contact info as key/value rows (keys: `contact_address`, `contact_phone`, `contact_phone_href`, `contact_email`).
+- `ServiceTime` rows are ordered by `sortOrder` — admin can reorder via the sort order field.
 - Connection: `postgresql://USER:PASSWORD@HOST:5432/yesudas_ministries`
 - Seed: `npx prisma db seed` (runs `prisma/seed.ts` via `tsx`)
 - `prisma.config.ts` at project root — Prisma 7 config file defining schema path, migrations path, and seed command.
@@ -56,8 +59,10 @@ Next.js 16.2.1, React 19, TypeScript, Tailwind CSS 4, App Router.
 - Dashboard (`page.tsx`) — uses `Promise.all` for parallel Prisma counts.
 
 ### API Routes (`app/api/admin/`)
-All 16 routes call `verifyAdminSessionForApi()` first, return 401 if null:
-`stats`, `blog`, `blog/[id]`, `events`, `events/[id]`, `ministries`, `ministries/[id]`, `team`, `team/[id]`, `newsletter`, `newsletter/export` (CSV download), `contacts`, `contacts/[id]` (PATCH mark-read), `donations`, `sermons`, `sermons/[id]`.
+All 18 routes call `verifyAdminSessionForApi()` first, return 401 if null:
+`stats`, `blog`, `blog/[id]`, `events`, `events/[id]`, `ministries`, `ministries/[id]`, `team`, `team/[id]`, `newsletter`, `newsletter/export` (CSV download), `contacts`, `contacts/[id]` (PATCH mark-read), `donations`, `sermons`, `sermons/[id]`, `service-times`, `service-times/[id]`, `settings`.
+
+Mutation routes (`POST`, `PUT`, `DELETE`) on `service-times` and `settings` call `revalidateTag(tag, { expire: 0 })` after each successful write to invalidate the public-facing `unstable_cache`.
 
 ### Admin UI Components (`components/admin/`)
 All forms: `"use client"`, `react-hook-form` + `zodResolver`, `useRouter` for redirect after save, `sonner` toast for feedback.
@@ -75,6 +80,18 @@ Tags fields use comma-separated string input with `.transform(s => s.split(",").
 | `/events` | `prisma.churchEvent.findMany()` → `mapEvent()` |
 | `/ministries` | `prisma.ministry.findMany()` → `mapMinistry()` |
 | `/sermons` | `prisma.sermon.findMany({ where: { published: true } })` → `mapSermon()` — now DB-backed like other pages |
+| `/contact` | `getServiceTimes()` + `getSiteSettings()` from `lib/public-data.ts` — `force-dynamic` |
+| Footer (all pages) | `FooterWrapper` (async server component) calls `getServiceTimes()` + `getSiteSettings()` — cached 1 h |
+
+### lib/public-data.ts
+
+Cached data helpers for service times and contact info. Used by `FooterWrapper` and the contact page:
+- `getServiceTimes()` — `unstable_cache` wrapping `prisma.serviceTime.findMany`, 1-hour TTL, tag `"service-times"`. Falls back to hardcoded defaults if DB is unavailable.
+- `getSiteSettings()` — `unstable_cache` wrapping `prisma.siteSettings.findMany`, 1-hour TTL, tag `"site-settings"`. Falls back to hardcoded defaults.
+
+### Footer / ConditionalFooter pattern
+
+`ConditionalFooter` is `"use client"` (needs `usePathname`). It accepts `children: React.ReactNode` and renders them only on non-admin routes. `FooterWrapper` is an async server component that fetches data and renders `<Footer>`. The layout passes `<FooterWrapper />` as children to `<ConditionalFooter>` — this is the correct RSC-in-client-component pattern.
 
 ---
 

@@ -72,8 +72,24 @@ export const sermonSchema = z.object({
   sortOrder: z.number().int().default(0),
 });
 
+export const serviceTimeSchema = z.object({
+  day: z.string().min(1).max(50),
+  time: z.string().min(1).max(100),
+  label: z.string().min(1).max(200),
+  sortOrder: z.number().int().default(0),
+});
+
+export const siteSettingsSchema = z.object({
+  contact_address: z.string().min(1),
+  contact_phone: z.string().min(1),
+  contact_phone_href: z.string().min(1),
+  contact_email: z.string().email(),
+});
+
 export type BlogPostInput = z.infer<typeof blogPostSchema>;
 export type ChurchEventInput = z.infer<typeof churchEventSchema>;
 export type MinistryInput = z.infer<typeof ministrySchema>;
 export type TeamMemberInput = z.infer<typeof teamMemberSchema>;
 export type SermonInput = z.infer<typeof sermonSchema>;
+export type ServiceTimeInput = z.infer<typeof serviceTimeSchema>;
+export type SiteSettingsInput = z.infer<typeof siteSettingsSchema>;
