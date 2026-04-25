@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Badge } from "@/components/ui/badge";
 import { GiveOptions } from "@/components/give/GiveOptions";
+import { getGiveSettings } from "@/lib/public-data";
 import { Heart, Shield, Globe, HandHeart } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Give",
@@ -39,7 +42,8 @@ const givingAreas = [
   },
 ];
 
-export default function GivePage() {
+export default async function GivePage() {
+  const giveSettings = await getGiveSettings();
   return (
     <div className="flex flex-col">
       {/* Header */}
@@ -80,7 +84,7 @@ export default function GivePage() {
       {/* Donation form */}
       <section className="py-14 bg-[#FDF6EC]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <GiveOptions />
+          <GiveOptions giveSettings={giveSettings} />
         </div>
       </section>
 

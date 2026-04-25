@@ -6,26 +6,42 @@ import { DonationForm } from "./DonationForm";
 import { RazorpayButton } from "./RazorpayButton";
 import { StripeCheckout } from "./StripeCheckout";
 import type { DonationValues } from "./DonationForm";
-import { QrCode, Copy, CheckCircle } from "lucide-react";
+import type { GiveSettings } from "@/lib/public-data";
+import { QRCodeSVG } from "qrcode.react";
+import { Copy, CheckCircle } from "lucide-react";
 
-const UPI_ID = "fryesudasministries@upi";
+interface UPITabProps {
+  donation: DonationValues;
+  upiId: string;
+  bankAccountName: string;
+  bankAccountNumber: string;
+  bankIfsc: string;
+  bankName: string;
+}
 
-function UPITab({ donation }: { donation: DonationValues }) {
+function UPITab({ donation, upiId, bankAccountName, bankAccountNumber, bankIfsc, bankName }: UPITabProps) {
   const [copied, setCopied] = useState(false);
 
+  const upiDeepLink = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(bankAccountName)}&cu=INR`;
+
   const copy = () => {
-    navigator.clipboard.writeText(UPI_ID);
+    navigator.clipboard.writeText(upiId);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <div className="space-y-6 text-center">
-      {/* QR placeholder */}
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-48 h-48 bg-[#FDF6EC] border-2 border-[#D4A853]/40 rounded-xl flex flex-col items-center justify-center mx-auto">
-          <QrCode className="h-20 w-20 text-[#1B2A4A]" />
-          <p className="text-xs text-gray-400 mt-2 font-body">UPI QR Code</p>
+      {/* Generated QR code */}
+      <div className="flex flex-col items-center gap-3">
+        <div className="p-3 bg-white border-2 border-[#D4A853]/40 rounded-xl inline-block">
+          <QRCodeSVG
+            value={upiDeepLink}
+            size={176}
+            bgColor="#ffffff"
+            fgColor="#1B2A4A"
+            level="M"
+          />
         </div>
         <p className="font-body text-xs text-gray-500">
           Scan with any UPI app — GPay, PhonePe, Paytm, BHIM
@@ -36,7 +52,7 @@ function UPITab({ donation }: { donation: DonationValues }) {
       <div className="bg-[#FDF6EC] rounded-xl p-4 border border-[#D4A853]/30">
         <p className="font-body text-xs text-gray-500 mb-1">UPI ID</p>
         <div className="flex items-center justify-center gap-3">
-          <span className="font-mono text-[#1B2A4A] font-semibold">{UPI_ID}</span>
+          <span className="font-mono text-[#1B2A4A] font-semibold">{upiId}</span>
           <button
             onClick={copy}
             className="text-[#D4A853] hover:text-[#b8893a] transition-colors"
@@ -73,19 +89,19 @@ function UPITab({ donation }: { donation: DonationValues }) {
         <div className="space-y-1.5 text-sm font-body text-white/80">
           <div className="flex justify-between">
             <span>Account Name</span>
-            <span className="font-semibold text-white">Fr. Yesudas Ministries</span>
+            <span className="font-semibold text-white">{bankAccountName}</span>
           </div>
           <div className="flex justify-between">
             <span>Account Number</span>
-            <span className="font-semibold text-white">XXXX XXXX XXXX</span>
+            <span className="font-semibold text-white">{bankAccountNumber || "—"}</span>
           </div>
           <div className="flex justify-between">
             <span>IFSC Code</span>
-            <span className="font-semibold text-white">XXXXXXXXXX</span>
+            <span className="font-semibold text-white">{bankIfsc || "—"}</span>
           </div>
           <div className="flex justify-between">
             <span>Bank</span>
-            <span className="font-semibold text-white">State Bank of India</span>
+            <span className="font-semibold text-white">{bankName}</span>
           </div>
         </div>
       </div>
@@ -93,11 +109,18 @@ function UPITab({ donation }: { donation: DonationValues }) {
   );
 }
 
-export function GiveOptions() {
+interface GiveOptionsProps {
+  giveSettings: GiveSettings;
+}
+
+export function GiveOptions({ giveSettings }: GiveOptionsProps) {
+  const firstDefaultAmount =
+    giveSettings.presetAmountsINR[1] ?? giveSettings.presetAmountsINR[0] ?? 0;
+
   const [donation, setDonation] = useState<DonationValues>({
-    amount: 1000,
+    amount: firstDefaultAmount,
     currency: "INR",
-    cause: "general",
+    cause: giveSettings.causes[0]?.value ?? "general",
     frequency: "one-time",
     donorName: "",
     donorEmail: "",
@@ -106,6 +129,14 @@ export function GiveOptions() {
   const razorpayConfigured = !!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
   const stripeConfigured = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
+  const tabs = [
+    giveSettings.enableRazorpay && { value: "razorpay", label: "Razorpay" },
+    giveSettings.enableStripe && { value: "stripe", label: "Stripe" },
+    giveSettings.enableUPI && { value: "upi", label: "UPI / Bank" },
+  ].filter(Boolean) as { value: string; label: string }[];
+
+  const defaultTab = tabs[0]?.value ?? "upi";
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
       {/* Left: Donation amount form */}
@@ -113,7 +144,12 @@ export function GiveOptions() {
         <h2 className="font-heading text-2xl font-semibold text-[#1B2A4A] mb-6">
           Choose Your Gift
         </h2>
-        <DonationForm onChange={setDonation} />
+        <DonationForm
+          onChange={setDonation}
+          presetAmountsINR={giveSettings.presetAmountsINR}
+          presetAmountsUSD={giveSettings.presetAmountsUSD}
+          causes={giveSettings.causes}
+        />
       </div>
 
       {/* Right: Payment method */}
@@ -122,56 +158,69 @@ export function GiveOptions() {
           Payment Method
         </h2>
 
-        <Tabs defaultValue={razorpayConfigured ? "razorpay" : "upi"}>
-          <TabsList className="w-full mb-6 grid grid-cols-3 h-auto gap-1 bg-[#FDF6EC] p-1 rounded-xl">
-            <TabsTrigger
-              value="razorpay"
-              className="text-xs font-body font-semibold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#1B2A4A] data-[state=active]:shadow-sm"
+        {tabs.length === 0 ? (
+          <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 text-sm font-body text-gray-500 text-center">
+            No payment methods are currently available. Please contact the ministry.
+          </div>
+        ) : (
+          <Tabs defaultValue={defaultTab}>
+            <TabsList
+              className={`w-full mb-6 grid h-auto gap-1 bg-[#FDF6EC] p-1 rounded-xl`}
+              style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
             >
-              Razorpay
-            </TabsTrigger>
-            <TabsTrigger
-              value="stripe"
-              className="text-xs font-body font-semibold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#1B2A4A] data-[state=active]:shadow-sm"
-            >
-              Stripe
-            </TabsTrigger>
-            <TabsTrigger
-              value="upi"
-              className="text-xs font-body font-semibold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#1B2A4A] data-[state=active]:shadow-sm"
-            >
-              UPI / Bank
-            </TabsTrigger>
-          </TabsList>
+              {tabs.map((tab) => (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className="text-xs font-body font-semibold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#1B2A4A] data-[state=active]:shadow-sm"
+                >
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-          <TabsContent value="razorpay">
-            {razorpayConfigured ? (
-              <RazorpayButton donation={donation} />
-            ) : (
-              <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm font-body text-amber-800">
-                Razorpay is not configured yet. Add{" "}
-                <code className="font-mono">NEXT_PUBLIC_RAZORPAY_KEY_ID</code> to{" "}
-                <code className="font-mono">.env.local</code> to enable.
-              </div>
+            {giveSettings.enableRazorpay && (
+              <TabsContent value="razorpay">
+                {razorpayConfigured ? (
+                  <RazorpayButton donation={donation} />
+                ) : (
+                  <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm font-body text-amber-800">
+                    Razorpay is not configured yet. Add{" "}
+                    <code className="font-mono">NEXT_PUBLIC_RAZORPAY_KEY_ID</code> to{" "}
+                    <code className="font-mono">.env.local</code> to enable.
+                  </div>
+                )}
+              </TabsContent>
             )}
-          </TabsContent>
 
-          <TabsContent value="stripe">
-            {stripeConfigured ? (
-              <StripeCheckout donation={donation} />
-            ) : (
-              <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm font-body text-amber-800">
-                Stripe is not configured yet. Add{" "}
-                <code className="font-mono">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> to{" "}
-                <code className="font-mono">.env.local</code> to enable.
-              </div>
+            {giveSettings.enableStripe && (
+              <TabsContent value="stripe">
+                {stripeConfigured ? (
+                  <StripeCheckout donation={donation} />
+                ) : (
+                  <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm font-body text-amber-800">
+                    Stripe is not configured yet. Add{" "}
+                    <code className="font-mono">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> to{" "}
+                    <code className="font-mono">.env.local</code> to enable.
+                  </div>
+                )}
+              </TabsContent>
             )}
-          </TabsContent>
 
-          <TabsContent value="upi">
-            <UPITab donation={donation} />
-          </TabsContent>
-        </Tabs>
+            {giveSettings.enableUPI && (
+              <TabsContent value="upi">
+                <UPITab
+                  donation={donation}
+                  upiId={giveSettings.upiId}
+                  bankAccountName={giveSettings.bankAccountName}
+                  bankAccountNumber={giveSettings.bankAccountNumber}
+                  bankIfsc={giveSettings.bankIfsc}
+                  bankName={giveSettings.bankName}
+                />
+              </TabsContent>
+            )}
+          </Tabs>
+        )}
 
         <p className="mt-4 text-center text-xs text-gray-400 font-body">
           All donations support the ministry of Fr. Yesudas Ministries.

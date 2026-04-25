@@ -86,6 +86,20 @@ export const siteSettingsSchema = z.object({
   contact_email: z.string().email(),
 });
 
+export const giveSettingsSchema = z.object({
+  give_preset_amounts_inr: z.string().min(1),
+  give_preset_amounts_usd: z.string().min(1),
+  give_causes: z.string().min(2),
+  give_enable_razorpay: z.enum(["true", "false"]),
+  give_enable_stripe: z.enum(["true", "false"]),
+  give_enable_upi: z.enum(["true", "false"]),
+  give_upi_id: z.string(),
+  give_bank_account_name: z.string(),
+  give_bank_account_number: z.string(),
+  give_bank_ifsc: z.string(),
+  give_bank_name: z.string(),
+});
+
 export type BlogPostInput = z.infer<typeof blogPostSchema>;
 export type ChurchEventInput = z.infer<typeof churchEventSchema>;
 export type MinistryInput = z.infer<typeof ministrySchema>;
@@ -93,3 +107,4 @@ export type TeamMemberInput = z.infer<typeof teamMemberSchema>;
 export type SermonInput = z.infer<typeof sermonSchema>;
 export type ServiceTimeInput = z.infer<typeof serviceTimeSchema>;
 export type SiteSettingsInput = z.infer<typeof siteSettingsSchema>;
+export type GiveSettingsInput = z.infer<typeof giveSettingsSchema>;

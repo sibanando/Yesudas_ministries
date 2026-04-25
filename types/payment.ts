@@ -1,9 +1,4 @@
-export type DonationCause =
-  | "general"
-  | "building"
-  | "missions"
-  | "compassion"
-  | "youth";
+export type DonationCause = string;
 
 export type DonationFrequency = "one-time" | "monthly";
 

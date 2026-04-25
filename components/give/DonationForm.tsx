@@ -3,12 +3,11 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { DonationCause, DonationFrequency } from "@/types/payment";
+import type { DonationFrequency } from "@/types/payment";
 
-const PRESET_AMOUNTS_INR = [500, 1000, 2500, 5000];
-const PRESET_AMOUNTS_USD = [10, 25, 50, 100];
-
-const CAUSES: { value: DonationCause; label: string }[] = [
+const FALLBACK_AMOUNTS_INR = [500, 1000, 2500, 5000];
+const FALLBACK_AMOUNTS_USD = [10, 25, 50, 100];
+const FALLBACK_CAUSES = [
   { value: "general", label: "General Fund" },
   { value: "building", label: "Building & Facilities" },
   { value: "missions", label: "Mission Support" },
@@ -19,7 +18,7 @@ const CAUSES: { value: DonationCause; label: string }[] = [
 export interface DonationValues {
   amount: number;
   currency: "INR" | "USD";
-  cause: DonationCause;
+  cause: string;
   frequency: DonationFrequency;
   donorName: string;
   donorEmail: string;
@@ -27,24 +26,32 @@ export interface DonationValues {
 
 interface DonationFormProps {
   onChange: (values: DonationValues) => void;
+  presetAmountsINR?: number[];
+  presetAmountsUSD?: number[];
+  causes?: { value: string; label: string }[];
 }
 
-export function DonationForm({ onChange }: DonationFormProps) {
+export function DonationForm({
+  onChange,
+  presetAmountsINR = FALLBACK_AMOUNTS_INR,
+  presetAmountsUSD = FALLBACK_AMOUNTS_USD,
+  causes = FALLBACK_CAUSES,
+}: DonationFormProps) {
   const [currency, setCurrency] = useState<"INR" | "USD">("INR");
   const [frequency, setFrequency] = useState<DonationFrequency>("one-time");
-  const [cause, setCause] = useState<DonationCause>("general");
-  const [selectedPreset, setSelectedPreset] = useState<number | null>(1000);
+  const [cause, setCause] = useState<string>(causes[0]?.value ?? "general");
+  const [selectedPreset, setSelectedPreset] = useState<number | null>(
+    presetAmountsINR[1] ?? presetAmountsINR[0] ?? null
+  );
   const [customAmount, setCustomAmount] = useState("");
   const [donorName, setDonorName] = useState("");
   const [donorEmail, setDonorEmail] = useState("");
 
-  const presets = currency === "INR" ? PRESET_AMOUNTS_INR : PRESET_AMOUNTS_USD;
+  const presets = currency === "INR" ? presetAmountsINR : presetAmountsUSD;
   const symbol = currency === "INR" ? "₹" : "$";
 
   const effectiveAmount =
-    selectedPreset !== null
-      ? selectedPreset
-      : parseFloat(customAmount) || 0;
+    selectedPreset !== null ? selectedPreset : parseFloat(customAmount) || 0;
 
   const notify = (patch: Partial<DonationValues>) => {
     onChange({
@@ -71,10 +78,14 @@ export function DonationForm({ onChange }: DonationFormProps) {
   };
 
   const handleCurrency = (c: "INR" | "USD") => {
+    const defaultAmt =
+      c === "INR"
+        ? (presetAmountsINR[1] ?? presetAmountsINR[0] ?? null)
+        : (presetAmountsUSD[1] ?? presetAmountsUSD[0] ?? null);
     setCurrency(c);
-    setSelectedPreset(c === "INR" ? 1000 : 25);
+    setSelectedPreset(defaultAmt);
     setCustomAmount("");
-    notify({ currency: c, amount: c === "INR" ? 1000 : 25 });
+    notify({ currency: c, amount: defaultAmt ?? 0 });
   };
 
   return (
@@ -165,7 +176,7 @@ export function DonationForm({ onChange }: DonationFormProps) {
           Giving Towards
         </Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {CAUSES.map((c) => (
+          {causes.map((c) => (
             <button
               key={c.value}
               onClick={() => { setCause(c.value); notify({ cause: c.value }); }}
