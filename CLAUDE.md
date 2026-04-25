@@ -33,6 +33,7 @@ Next.js 16.2.1, React 19, TypeScript, Tailwind CSS 4, App Router.
 - `date` fields on `BlogPost` and `ChurchEvent` are `String` (format `"YYYY-MM-DD"`) to match existing TypeScript types.
 - `Donation.amount` is stored in smallest currency unit (paise/cents) — divide by 100 for display.
 - `SiteSettings` stores contact info as key/value rows (keys: `contact_address`, `contact_phone`, `contact_phone_href`, `contact_email`).
+- `SiteSettings` also stores Give page config as `give_*` keys: `give_preset_amounts_inr`, `give_preset_amounts_usd`, `give_causes` (JSON array), `give_enable_razorpay`, `give_enable_stripe`, `give_enable_upi`, `give_upi_id`, `give_bank_account_name`, `give_bank_account_number`, `give_bank_ifsc`, `give_bank_name`.
 - `ServiceTime` rows are ordered by `sortOrder` — admin can reorder via the sort order field.
 - Connection: `postgresql://USER:PASSWORD@HOST:5432/yesudas_ministries`
 - Seed: `npx prisma db seed` (runs `prisma/seed.ts` via `tsx`)
@@ -59,10 +60,10 @@ Next.js 16.2.1, React 19, TypeScript, Tailwind CSS 4, App Router.
 - Dashboard (`page.tsx`) — uses `Promise.all` for parallel Prisma counts.
 
 ### API Routes (`app/api/admin/`)
-All 18 routes call `verifyAdminSessionForApi()` first, return 401 if null:
-`stats`, `blog`, `blog/[id]`, `events`, `events/[id]`, `ministries`, `ministries/[id]`, `team`, `team/[id]`, `newsletter`, `newsletter/export` (CSV download), `contacts`, `contacts/[id]` (PATCH mark-read), `donations`, `sermons`, `sermons/[id]`, `service-times`, `service-times/[id]`, `settings`.
+All 19 routes call `verifyAdminSessionForApi()` first, return 401 if null:
+`stats`, `blog`, `blog/[id]`, `events`, `events/[id]`, `ministries`, `ministries/[id]`, `team`, `team/[id]`, `newsletter`, `newsletter/export` (CSV download), `contacts`, `contacts/[id]` (PATCH mark-read), `donations`, `sermons`, `sermons/[id]`, `service-times`, `service-times/[id]`, `settings`, `give-settings`.
 
-Mutation routes (`POST`, `PUT`, `DELETE`) on `service-times` and `settings` call `revalidateTag(tag, { expire: 0 })` after each successful write to invalidate the public-facing `unstable_cache`.
+Mutation routes (`POST`, `PUT`, `DELETE`) on `service-times`, `settings`, and `give-settings` call `revalidateTag(tag, { expire: 0 })` after each successful write to invalidate the public-facing `unstable_cache`.
 
 ### Admin UI Components (`components/admin/`)
 All forms: `"use client"`, `react-hook-form` + `zodResolver`, `useRouter` for redirect after save, `sonner` toast for feedback.
@@ -80,14 +81,17 @@ Tags fields use comma-separated string input with `.transform(s => s.split(",").
 | `/events` | `prisma.churchEvent.findMany()` → `mapEvent()` |
 | `/ministries` | `prisma.ministry.findMany()` → `mapMinistry()` |
 | `/sermons` | `prisma.sermon.findMany({ where: { published: true } })` → `mapSermon()` — now DB-backed like other pages |
+| `/give` | `getGiveSettings()` from `lib/public-data.ts` — `force-dynamic` |
 | `/contact` | `getServiceTimes()` + `getSiteSettings()` from `lib/public-data.ts` — `force-dynamic` |
 | Footer (all pages) | `FooterWrapper` (async server component) calls `getServiceTimes()` + `getSiteSettings()` — cached 1 h |
 
 ### lib/public-data.ts
 
-Cached data helpers for service times and contact info. Used by `FooterWrapper` and the contact page:
+Cached data helpers for service times, contact info, and give settings. Used by `FooterWrapper`, the contact page, and the give page:
 - `getServiceTimes()` — `unstable_cache` wrapping `prisma.serviceTime.findMany`, 1-hour TTL, tag `"service-times"`. Falls back to hardcoded defaults if DB is unavailable.
 - `getSiteSettings()` — `unstable_cache` wrapping `prisma.siteSettings.findMany`, 1-hour TTL, tag `"site-settings"`. Falls back to hardcoded defaults.
+- `getGiveSettings()` — `unstable_cache` wrapping `prisma.siteSettings.findMany({ where: { key: { startsWith: "give_" } } })`, 1-hour TTL, tag `"give-settings"`. Returns `GiveSettings` type with preset amounts, causes, payment method toggles, UPI ID, and bank details. Falls back to hardcoded defaults.
+- Exported types: `GiveCause` (`{ value: string; label: string }`), `GiveSettings`.
 
 ### Footer / ConditionalFooter pattern
 
@@ -123,6 +127,7 @@ prisma.someModel.create({ data: { ... } })
 | `sonner` | Toast notifications |
 | `date-fns` | Date formatting |
 | `razorpay` + `stripe` | Payment gateways |
+| `qrcode.react` | Client-side QR code generation for UPI payments |
 | `nodemailer` | Contact + newsletter emails |
 
 ---

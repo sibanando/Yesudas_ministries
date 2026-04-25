@@ -667,6 +667,7 @@ cat backup_20260422.sql | docker compose exec -T postgres psql -U postgres -d ye
 | `/admin/donations` | View donations |
 | `/admin/newsletter` | View & export subscribers |
 | `/admin/service-times` | Manage service times shown in footer and contact page |
+| `/admin/give-settings` | Manage Give page: preset gift amounts, donation causes, payment method toggles (Razorpay/Stripe/UPI), UPI ID, and bank details |
 | `/admin/settings` | Manage contact info (address, phone, email) shown in footer and contact page |
 
 **Default credentials** (change immediately after first login):
